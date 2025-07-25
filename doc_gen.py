@@ -4,7 +4,7 @@ import argparse
 
 def extract_docs(code):
     pattern = re.compile(
-        r'(/\*\*([\s\S]*?)\*/)\s*([\w\d_]+)\s*::\s*proc\s*(\([^\)]*\))',
+        r'(/\*([\s\S]*?)\*/)\s*([\w\d_]+)\s*::\s*proc\s*(\([^\)]*\))',
         re.MULTILINE
     )
     docs = []
