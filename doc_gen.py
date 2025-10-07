@@ -6,16 +6,32 @@ from pathlib import Path, PurePosixPath
 
 def extract_docs(code):
     pattern = re.compile(
-        r'(/\*([\s\S]*?)\*/)\s*([\w\d_]+)\s*::\s*proc\s*(\([^\)]*\)(?:\s*->\s*[\w\d_]+)?)',
+        r'(/\*[\s\S]*?\*/)\s*(?:@\w+\s*)*([\w\d_]+)\s*::\s*proc\s*(\([^\)]*\)(?:\s*->\s*[\w\d_]+)?)',
         re.MULTILINE
     )
     docs = []
     for match in pattern.finditer(code):
-        full_comment = match.group(2).strip()
-        func_name = match.group(3).strip()
-        params_sig = match.group(4).strip()
+        full_comment = match.group(1).strip()
+        func_name = match.group(2).strip()
+        params_sig = match.group(3).strip()
 
-        lines = [line.strip(" *") for line in full_comment.splitlines()]
+        # Clean block comment
+        if full_comment.startswith("/*"):
+            full_comment = full_comment[2:]
+        if full_comment.endswith("*/"):
+            full_comment = full_comment[:-2]
+
+        lines = []
+        for line in full_comment.splitlines():
+            line = line.strip()  # remove leading/trailing whitespace
+            if line.startswith("*"):
+                line = line[1:].strip()
+            # Remove inline slashes if they enclose the line
+            if line.startswith("/") and line.endswith("/"):
+                line = line[1:-1].strip()
+            if line:  # skip empty lines
+                lines.append(line)
+
         description = []
         params_list = []
         returns = ""
@@ -40,6 +56,7 @@ def extract_docs(code):
             "signature": params_sig
         })
     return docs
+
 
 def generate_html(docs, filename, sidebar_html="", current_file_path=None, out_dir=None):
     if current_file_path and out_dir:
